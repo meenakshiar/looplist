@@ -2,7 +2,7 @@
 
 A social habit tracker designed for micro-habits. Strengthen your routines with visual streaks and stay motivated through community support.
 
-🎥 Watch Demo[https://github.com/meenakshiar/looplist.git]
+🎥 Watch Demo
 
 ## 📌 About
 
