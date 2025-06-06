@@ -1,0 +1,132 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Summary
+
+The **Public Loop Boards** feature provides a dynamic, infinite‑scroll feed of user‑shared habit loops, enabling exploration, social reactions (“Cheer”), and cloning. It leverages best practices in social feed design—optimizing performance with lazy loading and “Load More” fallbacks citeturn0search4—and ensures accessibility through ARIA roles and keyboard support citeturn0search6. Backend endpoints support efficient pagination with cursor‑based queries, while front‑end components in Next.js and Hero UI implement card‑based layouts, reaction buttons, and clone actions. This PRD details objectives, metrics, functional and non‑functional requirements, data models, API contracts, UI/UX flows, error handling, technical integration, and Cursor tagging rules.
+
+---
+
+## 1. Objectives & Success Metrics
+
+- **Objective:** Foster community engagement by surfacing public habit loops in an intuitive, performant feed, driving “Cheer” reactions and loop cloning.  
+- **Metrics:**  
+  - **Feed Engagement Rate:** ≥ 60% of users perform at least one action (reaction or clone) per session citeturn0search0.  
+  - **Time to First Action:** < 15 seconds after feed load citeturn0search2.  
+  - **Infinite Scroll Performance:** 90th‑percentile frame rendering < 16 ms on mid‑range devices citeturn0search1.  
+  - **Accessibility Compliance:** WCAG 2.1 AA for role="feed" and keyboard navigation citeturn0search6.  
+
+---
+
+## 2. Functional Requirements
+
+### 2.1 Feed Listing & Navigation
+
+- **Infinite Scroll with Load‑More Fallback:** Automatically load next batch when near viewport bottom; include a “Load More” button as per best practices citeturn0search4.  
+- **Cursor‑Based Pagination:** Backend returns `nextCursor` to fetch subsequent pages, avoiding offset pitfalls citeturn0search4.  
+- **Card Layout:** Display each public loop as a card showing title, current streak, owner handle, and cover/icon citeturn1search8.  
+- **Filters & Sorting:** Sidebar or topbar filters—Frequency, Streak Length, Newest, Most Cheered—using faceted patterns citeturn1search2.  
+
+### 2.2 Social Reactions (“Cheer”)
+
+- **Emoji Reactions:** Predefined set + custom picker; increment reactor count on click citeturn0search7.  
+- **Optimistic UI Update:** Reflect reaction instantly; reconcile with server response citeturn0search2.  
+- **Reaction Summary:** Show top three emojis with counts, link to reactors list citeturn1search9.  
+
+### 2.3 Loop Cloning
+
+- **Clone Action:** Clicking “Clone” deep‑copies loop settings (frequency, start date resets to today, visibility default private) into user’s loops citeturn1search3.  
+- **Feedback Flow:** Show confirmation modal with “View My Loops” or “Continue Browsing” options citeturn0search2.  
+
+---
+
+## 3. Data Models
+
+```ts
+// PublicLoop View Model
+interface PublicLoop {
+  loopId:      ObjectId;
+  ownerId:     ObjectId;
+  ownerName:   string;
+  title:       string;
+  frequency:   string | string[];
+  currentStreak:number;
+  longestStreak:number;
+  coverImage?: string;
+  iconEmoji?:  string;
+  cheeredCount:number;
+  clonedCount: number;
+  createdAt:   Date;
+}
+
+// Reaction Schema (existing)
+interface Reaction {
+  loopId: ObjectId;
+  userId: ObjectId;
+  emoji:  string;
+  createdAt: Date;
+}
+
+// Clone Log
+interface Clone {
+  originalLoopId: ObjectId;
+  clonedBy:       ObjectId;
+  clonedAt:       Date;
+}
+```
+
+---
+
+## 4. API Contract
+
+| Route                                 | Method | Auth  | Query/Body                                           | Response                                     |
+|---------------------------------------|--------|-------|------------------------------------------------------|----------------------------------------------|
+| `/api/explore`                        | GET    | ❌     | `?cursor=…&limit=…&filters…`                         | `{ loops: PublicLoop[], nextCursor: string }` |
+| `/api/loops/:id/react`                | POST   | ✔️     | `{ emoji: "🎉" }`                                     | `{ reaction: Reaction }`                     |
+| `/api/loops/:id/clone`                | POST   | ✔️     | —                                                    | `{ loop: Loop }`                             |
+
+---
+
+## 5. UI/UX Flow
+
+1. **Access Explore Page:** Unauthenticated users see read‑only feed; logged‑in users see action buttons citeturn0search0.  
+2. **Scroll to Load:** As user scrolls, feed auto‑fetches next page; if performance issues, user can tap “Load More” citeturn0search4.  
+3. **React & Clone:** Tapping “Cheer” or “Clone” triggers optimistic updates; modals and toasts confirm actions citeturn0search7.  
+4. **Filtering:** Users open filter panel, adjust facets, and feed re‑requests with new query params citeturn1search2.  
+5. **Return to Top:** Persistent “Back to Top” button ensures users can easily navigate feed end citeturn0search4.  
+
+---
+
+## 6. Error Handling & Edge Cases
+
+- **Network Failures:** Display inline error banner (“Unable to load more loops”), allow retry citeturn0search2.  
+- **No More Content:** At end of feed, show “You’ve seen all loops” message citeturn0search4.  
+- **Concurrent Reactions:** Debounce rapid clicks; handle 409 Conflict by ignoring duplicates citeturn0search7.  
+- **Accessibility:** Ensure `role="feed"` and `aria-live` attributes for screen readers citeturn0search6.  
+
+---
+
+## 7. Technical Architecture & Integration
+
+- **Frontend (Next.js + Hero UI + Zustand):**  
+  - **Component:** `<ExploreFeed>` uses `useExploreStore` for loop pages citeturn1search8.  
+  - **InfiniteScroll Hook:** Custom hook wrapping IntersectionObserver for lazy load citeturn0search1.  
+  - **Filter Panel:** `<FilterDrawer>` with faceted UI patterns citeturn1search2.  
+- **Backend (Next.js API Routes + Mongoose):**  
+  - **Pagination:** Query with `createdAt` or `_id` cursor; index on `visibility` and `createdAt` citeturn0search4.  
+  - **Reaction & Clone Handlers:** Idempotent operations in `/app/api/loops/[id]/react` and `/clone` routes citeturn1search3.  
+
+---
+
+## 8. Cursor Integration Rules
+
+- **File Prefixes:** Begin new components/API files with `// PRD: PublicLoopBoard` for context linking.  
+- **TODO Tags:** Use `// TODO(PRD-PLB-<ID>):` at feed logic, filter implementation, and UX edge cases.  
+- **Schema Comments:** JSDoc on view models explaining each field’s purpose.  
+- **Folder README:** Add `/components/ExploreFeed/README.md` summarizing component roles for Cursor.  
+
+---
+
+This PRD ensures seamless end‑to‑end implementation of **Public Loop Boards**, guiding both developers and AI assistants like Cursor with precise requirements, best‑practice citations, and integration conventions.

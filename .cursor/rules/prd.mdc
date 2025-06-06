@@ -1,0 +1,55 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+**LoopList – Social Streak Tracker for Micro-Habits**
+
+**Scenario:**
+Everyone wants to build better habits — but most habit trackers are either private and dull, or overly complex. Whats missing is a streak-first, publicly accountable, visually rewarding system to make micro-habit building fun.
+
+LoopList lets users commit to tiny recurring habits, track streaks visually, and share public commitment boards where others can cheer, clone, or compete.
+
+**Objective:**
+Build a fullstack app where users can:
+* Create recurring micro-habits (aka loops)
+* Track their daily progress and streaks
+* Make habit boards public or private
+* Explore trending habits and clone them
+* React or cheer others public loops
+
+**User Role:** `user`
+Only one role — users can track their own habits, browse public ones, and interact with others through reactions and cloning.
+
+**Authentication & Authorization:**
+* Secure login/signup via email
+* All habit loops and progress data are private by default
+* Public boards can be explored without login, but reactions/clones require auth
+
+**Core Functional Features:**
+
+**1. Create a Loop**
+Form includes:
+* **Loop Title** (e.g., "Read 10 pages", "No sugar after 7pm")
+* **Frequency**: Daily / 3x per week / Weekdays / Custom
+* **Start Date**
+* **Public toggle**: `Private`, `Public`, `Friends only`
+* Optional emoji icon or cover image
+
+**2. Track Your Streaks**
+Daily check-in: tap to mark as done Loop state:
+* :large_green_square: **Active** = if streak is ongoing
+* :large_red_square: **Broken** = if a day is missed
+* :white_check_mark: **Completed** = if a loop had a time limit
+
+Show:
+* Current streak
+* Longest streak
+* Completion rate
+* Loop heatmap calendar (inspired by GitHub)
+
+**3. Public Loop Boards**
+* Users can view others public loops:
+   * "Cheer" with an emoji reaction
+   * "Clone this loop" to try it themselves
+   * See how many others are doing it

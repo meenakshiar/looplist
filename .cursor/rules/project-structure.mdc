@@ -1,0 +1,190 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# 🧠 LoopList Full-Stack Development Guide
+
+## 🧭 Development Philosophy
+
+- **Clean & Modular Code**: Adhere to SOLID principles for maintainability.
+- **Functional Programming**: Favor functional and declarative patterns over imperative ones.
+- **Type Safety**: Utilize TypeScript extensively for type safety.
+- **Component-Driven Development**: Build reusable and composable components.
+- **Progressive Enhancement**: Design with PWA capabilities in mind from the start.
+
+---
+
+## 📁 Folder Structure
+
+```
+project-root/
+├── app/                   # Next.js App Router
+│   ├── api/               # API routes
+│   ├── (auth)/            # Authentication routes
+│   ├── (dashboard)/       # Dashboard routes
+│   └── layout.tsx         # Root layout
+├── components/            # Reusable components
+│   ├── ui/                # UI components
+│   ├── forms/             # Form components
+│   └── layout/            # Layout components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utility functions and libraries
+│   ├── api/               # API utilities
+│   ├── utils/             # General utilities
+│   └── db/                # Database utilities
+├── models/                # Mongoose models
+├── public/                # Static assets
+│   ├── manifest.json      # PWA manifest
+│   └── service-worker.js  # PWA service worker
+├── store/                 # Zustand stores
+│   ├── slices/            # Store slices
+│   └── index.ts           # Store exports
+├── styles/                # Global styles
+├── types/                 # TypeScript type definitions
+└── middleware.ts          # Next.js middleware
+```
+
+---
+
+## 🧱 Feature Implementation
+
+### 1. Create Loop
+
+**Description**: Allow users to create recurring micro-habits (loops) with customizable settings.
+
+**Implementation**:
+
+- **UI**: `components/forms/CreateLoopForm.tsx`
+  - Fields:
+    - Loop Title (e.g., "Read 10 pages")
+    - Frequency: Daily / 3x per week / Weekdays / Custom
+    - Start Date
+    - Visibility: Private, Public, Friends only
+    - Optional emoji icon or cover image
+- **State Management**: `store/slices/loopSlice.ts`
+  - Actions:
+    - `createLoop`: Handles API call to create a new loop.
+- **API Route**: `app/api/loops/route.ts`
+  - Method: `POST`
+  - Validates input and saves the loop to MongoDB using Mongoose.
+- **Model**: `models/Loop.ts`
+  - Fields:
+    - title: string
+    - frequency: string
+    - startDate: Date
+    - visibility: enum
+    - icon: string (optional)
+    - userId: ObjectId (reference to User)
+
+### 2. Track Your Streak
+
+**Description**: Enable users to track their daily progress and visualize their habit streaks.
+
+**Implementation**:
+
+- **UI**: `components/ui/LoopTracker.tsx`
+  - Displays:
+    - Current streak
+    - Longest streak
+    - Completion rate
+    - Loop heatmap calendar (inspired by GitHub)
+  - Allows users to mark daily completion.
+- **State Management**: `store/slices/loopSlice.ts`
+  - Actions:
+    - `markCompletion`: Marks a loop as completed for the day.
+    - `fetchLoopStats`: Retrieves loop statistics.
+- **API Routes**:
+  - `app/api/loops/[id]/complete/route.ts`
+    - Method: `POST`
+    - Marks the loop as completed for the current day.
+  - `app/api/loops/[id]/stats/route.ts`
+    - Method: `GET`
+    - Returns current streak, longest streak, and completion rate.
+- **Model Update**: `models/Loop.ts`
+  - Add fields:
+    - completions: array of Dates
+    - currentStreak: number
+    - longestStreak: number
+
+### 3. Public Loop Boards
+
+**Description**: Allow users to view and interact with public loops created by others.
+
+**Implementation**:
+
+- **UI**: `components/ui/PublicLoopBoard.tsx`
+  - Displays a list/grid of public loops.
+  - Features:
+    - "Cheer" with an emoji reaction
+    - "Clone this loop" to add it to the user's own loops
+    - Display count of users participating
+- **State Management**: `store/slices/publicLoopSlice.ts`
+  - Actions:
+    - `fetchPublicLoops`: Retrieves public loops.
+    - `cheerLoop`: Adds a cheer reaction to a loop.
+    - `cloneLoop`: Clones a public loop for the current user.
+- **API Routes**:
+  - `app/api/public-loops/route.ts`
+    - Method: `GET`
+    - Returns a list of public loops.
+  - `app/api/public-loops/[id]/cheer/route.ts`
+    - Method: `POST`
+    - Adds a cheer to the specified loop.
+  - `app/api/public-loops/[id]/clone/route.ts`
+    - Method: `POST`
+    - Clones the specified loop for the current user.
+
+---
+
+## 🧪 State Management with Zustand
+
+**Structure**:
+
+- Each feature has its own slice within `store/slices/`.
+- Example: `store/slices/loopSlice.ts`
+
+```typescript
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+
+interface LoopState {
+  loops: Loop[]
+  createLoop: (data: LoopInput) => Promise<void>
+  markCompletion: (loopId: string) => Promise<void>
+  fetchLoopStats: (loopId: string) => Promise<LoopStats>
+}
+
+export const useLoopStore = create<LoopState>()(
+  immer((set) => ({
+    loops: [],
+    createLoop: async (data) => {
+      // API call to create loop
+    },
+    markCompletion: async (loopId) => {
+      // API call to mark completion
+    },
+    fetchLoopStats: async (loopId) => {
+      // API call to fetch stats
+    },
+  }))
+)
+```
+
+---
+
+## 🧰 Utilities and Helpers
+
+- **API Utilities**: `lib/api/`
+  - Functions to handle API calls, e.g., `createLoop`, `markCompletion`.
+- **Date Utilities**: `lib/utils/date.ts`
+  - Functions for date calculations, e.g., calculating streaks.
+- **Validation**: Use Zod schemas for input validation in API routes.
+
+---
+
+## 🧪 Testing
+
+- **Unit Tests**: Use Jest for testing utility functions and store slices.
+- **Integration Tests 

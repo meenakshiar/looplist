@@ -1,0 +1,256 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+Executive Summary
+This PRD outlines LoopList, a streak‑first micro‑habit tracking platform built with Next.js, Hero UI, MongoDB/Mongoose, and Zustand. It details every feature—from habit creation to public sharing—along with non‑functional requirements, data models, API endpoints, UI/UX flows, and engineering guidelines. A dedicated section on Cursor integration rules ensures the AI code editor can fully grasp the context, file structure, naming conventions, and prompt patterns needed to scaffold and maintain the codebase.
+
+1. Objectives & Success Metrics
+Primary Objective: Help users build and sustain micro‑habits through visual streaks and social accountability.
+
+Key Metrics:
+
+DAU/MAU ratio ≥ 30%
+
+Average streak length growth month over month
+
+% of loops made public ≥ 25%
+
+Reaction & clone rate ≥ 10% of public loops
+
+Time to check‑in < 5 seconds
+
+2. User Personas & Use Cases
+
+Persona	Goals	Motivations
+New Habit‑Builder	Start a simple daily habit, track progress	Low friction, gamification
+Accountable Achiever	Share loops publicly, get cheers, clone trending loops	Social accountability
+Habit Researcher	Browse trending habits, analyze success rates	Inspiration, cloning
+3. Functional Requirements
+3.1 Authentication & Authorization
+Signup / Login
+
+Email/password with secure hashing & validation
+
+“Reset password” flow via tokenized email link
+
+Access Control
+
+All loops default to private
+
+Public and Friends‑Only toggles
+
+Read‑only public browsing; reactions/cloning require auth
+
+3.2 Loop Management
+Create Loop
+
+Title (string, required)
+
+Frequency enum: Daily, Weekdays, 3×/week, Custom (select days)
+
+Start Date (defaults to today)
+
+Visibility: Private | Public | Friends‑Only
+
+Icon: Emoji picker or optional cover image upload
+
+Edit / Delete Loop
+
+Inline edit of any field; confirm delete with modal
+
+Soft‑delete in database (flag) for analytics
+
+3.3 Streak Tracking
+Daily Check‑in UI
+
+Big “Done” button on loop card
+
+Automatic rollover at user’s local midnight
+
+Loop State Indicators
+
+🟩 Active (current streak)
+
+🟥 Broken (missed day)
+
+✅ Completed (if loop has defined end)
+
+Statistics Panel
+
+Current streak count
+
+Longest streak record
+
+Completion rate (checks ÷ expected occurrences)
+
+Heatmap calendar (GitHub‑style)
+
+3.4 Public Loop Boards
+Explore Page
+
+Infinite scroll of public loops
+
+Filters: Frequency, Streak length, Popularity
+
+Search by title or hashtag
+
+Loop Detail Modal
+
+Owner’s streak metrics
+
+Reaction summary
+
+Clone button
+
+3.5 Social Interactions
+Reactions (“Cheer”)
+
+Predefined emoji set + custom
+
+Increment reaction counter
+
+Cloning
+
+Deep copy loop settings into user’s private list
+
+Optionally clone with progress history reset
+
+4. Non‑Functional Requirements
+Performance:
+
+200 ms TTFB for API routes
+
+Frontend caching with SWR/Zustand for hot data
+
+Scalability:
+
+MongoDB sharding strategy for loops collection
+
+Stateless Next.js API routes behind autoscaling
+
+Security:
+
+JWT authentication, HTTP‑only refresh tokens
+
+Rate limiting on check‑ins & reactions
+
+Accessibility:
+
+WCAG 2.1 AA compliance
+
+Keyboard‑navigable components
+
+5. Technical Architecture
+5.1 Frontend (Next.js + Hero UI + Zustand)
+Page Directory Structure
+
+csharp
+Copy
+Edit
+/pages
+  /auth
+    login.tsx
+    signup.tsx
+  /loops
+    index.tsx        // Explore
+    [loopId].tsx     // Detail
+  dashboard.tsx      // User’s loops & stats
+UI Library: Hero UI components for cards, modals, forms, buttons
+
+State Management:
+
+Zustand stores for:
+
+authStore (user session)
+
+loopStore (user loops, edit state)
+
+exploreStore (public loops pagination)
+
+5.2 Backend (Next API Routes + Mongoose)
+API Endpoints
+
+POST /api/auth/signup
+
+POST /api/auth/login
+
+GET /api/loops – user’s loops
+
+POST /api/loops – create loop
+
+PATCH/DELETE /api/loops/:id
+
+POST /api/loops/:id/checkin
+
+GET /api/explore – public loops
+
+POST /api/loops/:id/react
+
+POST /api/loops/:id/clone
+
+Mongoose Schemas
+
+User: email, passwordHash, name, createdAt
+
+Loop: title, frequency, startDate, visibility, iconUrl, ownerRef
+
+CheckIn: loopRef, date, status
+
+Reaction: loopRef, userRef, emoji, date
+
+6. Data Models
+ts
+Copy
+Edit
+interface Loop {
+  _id: ObjectId;
+  ownerId: ObjectId;
+  title: string;
+  frequency: 'daily' | 'weekdays' | '3x/week' | Array<'mon' ...>;
+  startDate: Date;
+  visibility: 'private' | 'public' | 'friends';
+  icon?: string;
+  createdAt: Date;
+}
+
+interface CheckIn {
+  loopId: ObjectId;
+  date: Date;
+  status: 'done' | 'missed';
+}
+
+interface Reaction {
+  loopId: ObjectId;
+  userId: ObjectId;
+  emoji: string;
+  createdAt: Date;
+}
+7. UI/UX Flows & Mockups
+Onboarding → Sign up → “Create Your First Loop” modal
+
+Dashboard → List of user’s loops with streak bars
+
+Check‑in → Tap card → instant UI update + API call
+
+Explore → Browse public loops → click to open detail panel
+
+Reaction/Clone → Buttons in detail panel → toast confirmation
+
+(Wireframes maintained separately in Figma—linked in project wiki)
+
+8. Analytics & Monitoring
+User Behavior: track loop creation, check‑ins, explore actions
+
+Performance: Vercel analytics + custom CloudWatch metrics
+
+Error Tracking: Sentry for frontend & backend exceptions
+
+9. Edge Cases & Error Handling
+Midnight UTC vs. Local → interpret check‑in window by user’s timezone
+
+Concurrency: Deduplicate rapid check‑in clicks via backend idempotency tokens
+
+Cloning Loops: Prevent duplicate clones; alert if loop already exists

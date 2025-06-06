@@ -1,0 +1,120 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Summary
+
+Effective habit‑tracking interfaces employ a one‑tap daily check‑in combined with immediate visual feedback to sustain user motivation and reduce friction citeturn0search1. Under the hood, streak counts are calculated by iterating through historical check‑in records and resetting upon a missed day, ensuring accurate “current” and “longest” streak metrics citeturn0search8. A rich statistics panel—displaying current streak, longest streak, completion rate, and a GitHub‑style heatmap calendar—reinforces user accountability and progress visibility citeturn1search4.
+
+---
+
+## 1. Objectives & Metrics
+
+- **Objective:** Enable users to effortlessly mark daily habit completions and visualize streak progress in real time citeturn0search5.  
+- **Success Metrics:**  
+  - **Daily Check‑in Rate:** ≥ 85% of active loops receive a check‑in each expected day citeturn0search5.  
+  - **Feature Engagement:** ≥ 70% of users view their statistics panel at least once per week citeturn0search5.  
+  - **Streak Accuracy:** 100% correctness in current/longest streak calculations over a 30‑day rolling window citeturn0search8.
+
+---
+
+## 2. Functional Requirements
+
+### 2.1 Daily Check‑In Interaction
+
+- **UI Control:** A prominent “Done” button on each loop card or detail view that requires a single tap/click citeturn0search1.  
+- **Timing Window:** User’s local midnight to midnight window; system automatically rolls over at 00:00 local time citeturn0search1.  
+- **Optimistic Update:** Immediately update UI state to “done” upon tap, then persist in the background for snappy feedback citeturn0search1.  
+
+### 2.2 Loop State Indicators
+
+- **🟩 Active:** Indicates the streak is ongoing with no missed days citeturn0search4.  
+- **🟥 Broken:** Marks the loop as broken when the user misses a scheduled check‑in; resets current streak to zero citeturn0search8.  
+- **✅ Completed:** For loops with defined end dates or target counts, marks final completion (optional feature extension) citeturn0search7.  
+
+### 2.3 Statistics Panel
+
+- **Current Streak:** Consecutive days with successful check‑ins citeturn0search8.  
+- **Longest Streak:** Maximum historical run of consecutive check‑ins citeturn0search8.  
+- **Completion Rate:** Ratio of total completed days to expected occurrences (expressed as a percentage) citeturn0search7.  
+- **Trend Insights:** Optional sparkline or mini‑chart showing check‑in frequency over past 30 days citeturn0search1.  
+
+### 2.4 Heatmap Calendar
+
+- **Inspiration:** GitHub‑style year‑long grid where each cell’s color intensity reflects check‑in frequency citeturn1search4.  
+- **Library Options:**  
+  - **Cal‑Heatmap:** Vanilla JS, highly configurable for domain/subdomain mapping citeturn1search1.  
+  - **react‑heat‑map (uiwjs):** Lightweight React component built on SVG, ideal for Next.js citeturn1search6.  
+- **Interactivity:** Hover/click on cells to reveal date and status details; color scale from empty (no check‑ins) to dark (high consistency) citeturn1search4.  
+
+---
+
+## 3. Data Model
+
+```ts
+// CheckIn Schema
+const CheckInSchema = new mongoose.Schema({
+  loopId:    { type: ObjectId, ref: 'Loop', required: true },  // Link to parent loop
+  date:      { type: Date, required: true, index: true },      // Midnight UTC of check‑in
+  status:    { type: String, enum: ['done','missed'], required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+```
+
+> **Calculation Logic:** Backend workflows should scan `CheckIn` records in date order, incrementing a counter for each “done” and resetting on “missed” to derive current and longest streaks citeturn0search8.
+
+---
+
+## 4. API Contract
+
+| Route                                 | Method | Auth  | Request Body                             | Response                      |
+|---------------------------------------|--------|-------|------------------------------------------|-------------------------------|
+| `/api/loops/:id/checkin`              | POST   | ✔️ JWT | `{ date: "2025-04-23T00:00:00Z" }`       | `{ checkIn: CheckIn }`        |
+| `/api/loops/:id/stats`                | GET    | ✔️ JWT | —                                        | `{ currentStreak, longestStreak, completionRate }` |
+| `/api/loops/:id/checkin/:date`        | DELETE | ✔️ JWT | —                                        | `{ success: true }`           |
+
+> **Idempotency:** POST `/checkin` must be idempotent per date to prevent duplicate records citeturn0search8.
+
+---
+
+## 5. UI/UX Flow
+
+1. **Dashboard View:** Each loop card shows a “Done” button and colored status square citeturn0search1.  
+2. **Check‑In:** User taps “Done” → card icon turns 🟩 → underlying POST request sent citeturn0search1.  
+3. **Stats Panel:** On click or at page load, fetch `/stats` → render current/longest streak and rate citeturn0search7.  
+4. **Heatmap:** Toggle “View Heatmap” in stats panel → render calendar component with interactive dates citeturn1search6.
+
+---
+
+## 6. Error Handling & Edge Cases
+
+- **Network Failures:** Revert optimistic UI on failure; show toast “Check‑in failed, try again” citeturn0search1.  
+- **Duplicate Check‑In Attempt:** Return 409 Conflict; silently ignore with no UI change citeturn0search8.  
+- **Missed Day Transition:** At local midnight, auto‑mark missed for loops not checked in, triggering Broken state citeturn0search8.  
+- **Timezone Shifts:** Normalize dates to UTC midnight but calculate streak windows in user’s timezone to avoid off‑by‑one errors citeturn0search1.
+
+---
+
+## 7. Technical Architecture & Integration
+
+- **Frontend (Next.js + Hero UI + Zustand):**  
+  - **State Store:** `useCheckInStore` with actions `submitCheckIn()`, `fetchStats()` citeturn0search5.  
+  - **Components:** `<LoopCard>` for check‑in button, `<StatsPanel>`, `<HeatmapCalendar>` using `react‑heat‑map` citeturn1search6.  
+- **Backend (Next.js API Routes + Mongoose):**  
+  - **Routes:** Implement under `/app/api/loops/[id]/checkin/route.ts` and `/stats/route.ts` citeturn0search8.  
+  - **Models:** `CheckIn` and existing `Loop` schemas in `/models` citeturn0search8.  
+- **Deployment:** Ensure MongoDB indices on `(loopId, date)` for performant lookups citeturn0search8.
+
+---
+
+## 8. Cursor Integration Rules
+
+- **File Headers:** Prefix new files with `// PRD: TrackStreaks` to link code to this specification.  
+- **TODO Tags:** Introduce `// TODO(PRD-TS-<ID>):` comments at check‑in logic, stats fetch, and calendar rendering points.  
+- **Schema Documentation:** JSDoc comments on `CheckInSchema` fields explaining usage and TTL behavior.  
+- **Folder Readmes:** Add a `README.md` in `/components/TrackStreaks` summarizing component roles for Cursor context.
+
+---
+
+This document provides a complete end‑to‑end blueprint for implementing the **Track Your Streaks** feature—ensuring clarity for both human engineers and AI‑driven tools like Cursor.

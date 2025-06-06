@@ -1,0 +1,141 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Summary
+
+The **Create Loop** feature enables users to define new micro‑habits (“loops”) through a guided form that enforces best practices in habit‑forming UX, robust data modeling, and secure end‑to‑end handling. Users specify a title, recurrence pattern, start date, visibility, and optional icon or image. On submission, the frontend validates inputs, dispatches to a Next.js API route, persists in MongoDB via Mongoose, updates Zustand state, and reflects immediately in the UI. Errors (e.g., invalid dates, missing title) surface inline. The following PRD details objectives, functional requirements, data model, API contracts, UI/UX guidelines, error handling, and Cursor integration rules—each grounded in industry‑proven patterns and richly cited for clarity.
+
+---
+
+## 1. Objectives & Metrics
+
+- **Objective:** Provide an intuitive, low‑friction form for defining new loops that maximizes completion and sharing. citeturn0search1  
+- **Success Metrics:**  
+  - **Form completion rate** ≥ 90% citeturn0search8  
+  - **Time to create loop** < 20 seconds citeturn0search8  
+  - **Error rate** (validation failures) < 2% citeturn0search8  
+
+---
+
+## 2. Functional Requirements
+
+### 2.1 Loop Creation Form
+
+1. **Title Input**  
+   - Placeholder: “Read 10 pages”  
+   - Max length: 100 chars; required, non‑empty citeturn0search0  
+2. **Frequency Selector**  
+   - Options:  
+     - **Daily** (every day)  
+     - **Weekdays** (Mon–Fri)  
+     - **3×/week** (default Mon/Wed/Fri)  
+     - **Custom**: multi‑select weekdays via checkboxes citeturn0search5  
+   - Implement as a segmented control for 2–5 options; mobile‑friendly, clear labels citeturn1search4  
+3. **Start Date Picker**  
+   - Calendar widget, default = today; prevent past dates beyond 1 year ago citeturn0search8  
+4. **Visibility Toggle**  
+   - Radio or segmented: **Private**, **Public**, **Friends Only**  
+   - Use immediate‑effect toggle UI; no “Save” button required citeturn1search8  
+5. **Icon & Cover Image**  
+   - Emoji picker (emoji‑button) or image uploader (max 2 MB, JPG/PNG) citeturn0search6  
+6. **Submit Button**  
+   - Disabled until form valid; “Create Loop”  
+   - On click: show loading spinner, POST to `/api/loops`, then redirect to dashboard citeturn0search2  
+
+### 2.2 Client‑Side Validation
+
+- Title non‑empty, ≤100 chars citeturn0search0  
+- Frequency required citeturn0search1  
+- Custom frequency must have ≥1 day selected citeturn0search5  
+- Image size/type validated before upload citeturn0search6  
+
+### 2.3 Server‑Side Handling
+
+- **API Route:** `POST /api/loops` (Next.js App Router)  
+- **Auth Guard:** only authenticated users citeturn0search8  
+- **Payload:**  
+  ```json
+  {
+    "title":"Read 10 pages",
+    "frequency":"daily"|"weekdays"|"3x/week"|["mon","wed",...],
+    "startDate":"2025-04-23T00:00:00Z",
+    "visibility":"private"|"public"|"friends",
+    "iconEmoji":"📖",
+    "coverImageUrl":"https://..."
+  }
+  ```  
+- **Response:** 201 Created with Loop object or 4xx error citeturn0search8  
+
+---
+
+## 3. Data Model
+
+```ts
+// Loop Schema
+const LoopSchema = new mongoose.Schema({
+  ownerId: { type: ObjectId, ref: 'User', required: true },
+  title:   { type: String, required: true, maxlength: 100 },
+  frequency: {
+    type: mongoose.Mixed,
+    required: true,
+    // 'daily','weekdays','3x/week' or Array of weekdays
+  },
+  startDate: { type: Date, required: true },
+  visibility:{ type: String, enum:['private','public','friends'], default:'private' },
+  iconEmoji: { type: String },
+  coverImageUrl: { type: String },
+  createdAt: { type: Date, default: Date.now },
+});
+```
+- **Indexes:** `ownerId`, `visibility` citeturn0search8  
+
+---
+
+## 4. API Contract
+
+| Route             | Method | Auth    | Req Body                    | Res Body           |
+|-------------------|--------|---------|-----------------------------|--------------------|
+| `/api/loops`      | POST   | ✔️ JWT   | Loop payload                | `{ loop: Loop }`   |
+| `/api/loops/:id`  | PATCH  | ✔️ JWT   | Partial Loop fields         | Updated Loop       |
+| `/api/loops/:id`  | DELETE | ✔️ JWT   | —                           | `{ success: true}` |
+
+---
+
+## 5. UI/UX Flow
+
+1. **Navigate to Dashboard** → click **“+ New Loop”** button  
+2. **Loop Modal** opens with form sections stacked vertically citeturn0search3  
+3. **Fill form** → inline errors (red text, icon) citeturn0search0  
+4. **Submit** → spinner on button, then close modal & show toast “Loop created!” citeturn0search2  
+5. **New Loop** appears at top of list with zero streak metrics citeturn0search5  
+
+---
+
+## 6. Error Handling & Edge Cases
+
+- **Invalid Date:** show “Start date can’t be in the future” citeturn0search8  
+- **Duplicate Title:** 409 Conflict; prompt to edit title citeturn0search9  
+- **Server Down:** show generic toast “Unable to create loop—please try again” citeturn0search8  
+- **Image Upload Failure:** fallback to emoji only, notify user citeturn0search6  
+
+---
+
+## 7. Technical Architecture & Integration
+
+- **Frontend**  
+  - **Next.js** App Router page at `/app/dashboard`  
+  - **Hero UI**: use `<Modal>`, `<Input>`, `<Button>`, `<SegmentedControl>` citeturn0search3  
+  - **Zustand Store**: `useLoopStore` actions: `createLoop()`, `setFormField()` citeturn0search8  
+- **Backend**  
+  - **Next.js API Route**: `/app/api/loops/route.ts` with handlers for POST, PATCH, DELETE citeturn0search8  
+  - **Mongoose**: Loop model in `/models/Loop.model.ts`  
+- **Cursor Tagging**  
+  - Prefix files with `// PRD: CreateLoop`  
+  - Insert `// TODO(PRD-CL-<field>):` comments at each form control  
+
+---
+
+This PRD delivers a clear, end‑to‑end blueprint—UI design grounded in UX research, precise API contracts, robust data modeling, and integration guidelines—to equip both developers and Cursor AI with the context needed to implement the **Create Loop** feature effectively.

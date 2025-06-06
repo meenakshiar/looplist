@@ -1,0 +1,183 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Executive Summary
+
+This PRD defines the **Authentication & Authorization** subsystem for **LoopList**, focusing solely on email‑based signup/login with verification, password reset, and secure session management. Leveraging **Next.js**, **MongoDB/Mongoose**, and **Resend** for transactional emails, the system ensures that users’ micro‑habit data remains private by default while enabling authenticated access for interacting with public loops.
+
+---
+
+## 1. Objectives & Success Metrics
+
+- **Primary Objective:** Provide a seamless, secure, and user‑friendly email‑only authentication flow.
+- **Key Metrics:**
+  - **Email verification rate:** ≥ 95% of signups complete verification
+  - **Password reset success rate:** ≥ 99%
+  - **Average time to verify email:** < 2 minutes
+  - **Auth API uptime:** ≥ 99.9%
+  - **Successful login attempts vs. failures:** > 98% success
+
+---
+
+## 2. Functional Requirements
+
+### 2.1 Signup & Email Verification
+
+1. **User Signup Form**  
+   - Inputs: Email (required), Password (required, min 8 chars)  
+   - “Sign Up” button disabled until validation passes  
+2. **Backend: `POST /api/auth/signup`**  
+   - Creates **User** record with `emailVerified: false` and hashed password (bcrypt/argon2)  
+   - Generates a **VerificationToken** (UUID + 6‑hour TTL)  
+   - Sends verification email via Resend:  
+     - From: `no-reply@looplist.app`  
+     - Link: `https://looplist.app/auth/verify?token=<token>`  
+     citeturn0search0 citeturn0search1  
+3. **Email Verification Endpoint**  
+   - `GET /api/auth/verify?token=`  
+   - Validates token, sets `user.emailVerified = true`, deletes token  
+   - Redirects to login page with success message  
+4. **Resend Verification**  
+   - `POST /api/auth/verify/resend` accepts email; rate‑limited (3/day)  
+   - Generates new token, invalidates previous, sends new email  
+
+### 2.2 Login
+
+1. **Login Form**  
+   - Inputs: Email, Password  
+   - “Log In” button disabled until both fields filled  
+2. **Backend: `POST /api/auth/login`**  
+   - Verifies credentials and `emailVerified === true`  
+   - On success: issues **JWT access token** (15 min) + **HTTP‑only refresh token** (7 days) stored in secure cookie  
+   - On failure: generic error (“Invalid credentials or email not verified”)  
+
+### 2.3 Password Reset
+
+1. **Request Reset Form**  
+   - Input: Email  
+   - Submits to `POST /api/auth/reset/request`  
+2. **Backend: Password Reset Request**  
+   - Generates **ResetToken** (UUID + 1‑hour TTL)  
+   - Sends reset email via Resend with link:  
+     `https://looplist.app/auth/reset?token=<token>`  
+3. **Reset Password Page**  
+   - `GET /auth/reset?token=` validates token, shows new‑password form  
+   - `POST /api/auth/reset` with token + new password  
+   - On success: clears token, updates hashed password, invalidates all refresh tokens for user  
+
+### 2.4 Session Management & Logout
+
+- **Refresh Endpoint:** `POST /api/auth/refresh`  
+  - Validates refresh token, issues new access token  
+- **Logout Endpoint:** `POST /api/auth/logout`  
+  - Clears refresh token cookie  
+
+---
+
+## 3. Data Models
+
+```ts
+// User Schema
+{
+  _id: ObjectId;
+  email: string;                // unique, indexed
+  passwordHash: string;         // bcrypt or argon2
+  emailVerified: boolean;       // default: false
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Token Schemas
+{
+  token: string;                // UUID
+  userId: ObjectId;             // reference to User
+  type: 'verification' | 'reset';
+  expiresAt: Date;              // TTL index
+  createdAt: Date;
+}
+```
+
+---
+
+## 4. API Endpoints
+
+| Route                               | Method | Auth    | Description                                |
+|-------------------------------------|--------|---------|--------------------------------------------|
+| `/api/auth/signup`                  | POST   | Public  | Register new user, send verification email |
+| `/api/auth/verify`                  | GET    | Public  | Verify email via token query param         |
+| `/api/auth/verify/resend`           | POST   | Public  | Resend verification email                  |
+| `/api/auth/login`                   | POST   | Public  | Authenticate, issue tokens                 |
+| `/api/auth/reset/request`           | POST   | Public  | Request password reset email               |
+| `/api/auth/reset`                   | POST   | Public  | Reset password with valid token            |
+| `/api/auth/refresh`                 | POST   | Cookie  | Refresh access token                       |
+| `/api/auth/logout`                  | POST   | Cookie  | Revoke refresh token                       |
+
+---
+
+## 5. UI/UX Flows
+
+1. **Signup Flow**  
+   - User enters email & password → submits → sees “Verification email sent” message  
+   - Checks inbox → clicks link → auto‑redirect to “Email Verified” success page  
+2. **Login Flow**  
+   - Enters credentials → if unverified, shows “Please verify your email first” link  
+   - On success, redirects to Dashboard  
+3. **Password Reset Flow**  
+   - Click “Forgot Password?” → enters email → sees “Reset link sent”  
+   - Clicks link in email → sets new password → redirected to login  
+
+---
+
+## 6. Security & Compliance
+
+- **Password Storage:** bcrypt (cost ≥ 12) or argon2id; no plaintext  
+- **Token Storage:** encrypted at rest; TTL indexes for automatic cleanup  
+- **Transport Security:** enforce HTTPS, HSTS headers  
+- **Cookie Security:** HTTP‑only, Secure, SameSite=Strict for refresh tokens  
+- **Rate Limiting:** 5 req/min per IP on auth endpoints  
+- **Email Deliverability:** use Resend’s dedicated domain verification citeturn0search2  
+
+---
+
+## 7. Non‑Functional Requirements
+
+- **Performance:**  
+  - Auth endpoints < 200 ms P95  
+- **Scalability:**  
+  - Stateless API routes; store sessions in JWTs  
+- **Observability:**  
+  - Log signup, login failures, token errors to Sentry  
+- **Accessibility:**  
+  - Forms labeled, ARIA error messages  
+
+---
+
+## 8. Error Handling & Edge Cases
+
+- **Expired/Invalid Tokens:** show clear messages and “Resend email” options  
+- **Unverified Login Attempt:** prompt to verify or resend link  
+- **Brute‑Force Protection:** temporary lockout after 10 failed logins  
+
+---
+
+## 9. Integration Guidelines
+
+- **Next.js Setup:**  
+  - Use App Router API routes under `/app/api/auth/...`  
+- **Resend Integration:**  
+  - Install: `npm install resend`  
+  - Initialize in server code:  
+    ```ts
+    import { Resend } from 'resend';
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    ```
+  - Send email in `/api/auth/signup` and reset endpoints using `resend.emails.send` citeturn0search1  
+- **Cursor Tagging:**  
+  - Prefix new files with `// PRD: Auth`  
+  - Tag TODOs as `// TODO(PRD-AUTH): …` for Cursor to track  
+
+---
+
+This markdown PRD can be directly copied into your `/docs/auth-prd.md` file, providing a complete blueprint for the email‑only authentication subsystem in **LoopList**.

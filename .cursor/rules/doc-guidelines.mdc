@@ -1,0 +1,165 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+To ensure your documentation remains consistent, up-to-date, and developer-friendly—especially in a modular Next.js project using the App Router, Zustand, Mongoose, and MongoDB—it's essential to establish clear guidelines and integrate automated processes. Here's a comprehensive approach tailored to your stack and development practices:
+
+---
+
+## 📚 Documentation Guidelines
+
+### 1. **Code-Level Documentation (JSDoc)**
+
+- **Purpose**:Provide inline documentation for functions, components, and modules to enhance readability and maintainability
+
+- **Standards**:
+  -Use [JSDoc](https://jsdoc.app/) comments for all exported functions, classes, and components
+  -Document parameters, return types, and provide concise descriptions
+
+- **Example**:
+  ```typescript
+  /**
+   * Fetches user data based on the provided ID.
+   * @param {string} userId - The unique identifier for the user.
+   * @returns {Promise<User>} The user data.
+   */
+  const getUserData = async (userId: string): Promise<User> => {
+    // implementation
+  };
+  ```
+
+### 2. **Component and Module Documentation**
+
+- **Purpose**:Ensure each component and module is self-explanatory and easy to integrate
+
+- **Standards**:
+  -Include a brief description at the top of each file explaining its purpose
+  -For React components, document props using TypeScript interfaces and provide default values where applicable
+
+- **Example**:
+  ```typescript
+  /**
+   * Button component for user interactions.
+   * @param {ButtonProps} props - The properties for the button.
+   * @returns {JSX.Element} The rendered button component.
+   */
+  const Button: React.FC<ButtonProps> = ({ label, onClick }) => {
+    // implementation
+  };
+  ```
+
+### 3. **Zustand Store Slices Documentation**
+
+- **Purpose**:Clarify the structure and purpose of each store slice for state management
+
+- **Standards**:
+  -Document the state structure and actions within each slice
+  -Provide usage examples in the comments
+
+- **Example**:
+  ```typescript
+  /**
+   * Auth slice for managing user authentication state.
+   * State:
+   * - user: The authenticated user's information.
+   * - isAuthenticated: Boolean indicating authentication status.
+   * Actions:
+   * - login: Function to authenticate a user.
+   * - logout: Function to clear authentication.
+   */
+  const createAuthSlice = (set) => ({
+    user: null,
+    isAuthenticated: false,
+    login: async (credentials) => { /* implementation */ },
+    logout: () => { /* implementation */ },
+  });
+  ```
+
+### 4. **API Route Documentation**
+
+- **Purpose**:Provide clarity on API endpoints, expected inputs, and outputs
+
+- **Standards**:
+  -At the top of each API route file, include a comment block detailing the endpoint's purpose, method, expected request body, and response structure
+
+- **Example**:
+  ```typescript
+  /**
+   * POST /api/users
+   * Creates a new user.
+   * Request Body:
+   * - name: string
+   * - email: string
+   * Response:
+   * - 201: User created successfully.
+   * - 400: Validation error.
+   */
+  export default async function handler(req, res) {
+    // implementation
+  }
+  ```
+
+### 5. **README and Feature Documentation**
+
+- **Purpose**:Offer an overview of the project, setup instructions, and feature-specific guides
+
+- **Standards**:
+  -Maintain a comprehensive `README.md` at the project root covering
+    - Project description
+    - Installation and setup
+    - Usage examples
+    - Contribution guidelines
+  -For each major feature or module, create a separate markdown file in a `docs/` directory detailing its purpose, usage, and any relevant notes
+
+---
+
+## 🔄 Automated Documentation Updates
+
+To ensure documentation stays in sync with code changes:
+
+### 1. **Pre-Commit Hooks**
+
+- **Tool** [Husky](https://typicode.github.io/husky)
+
+- **Purpose** Run scripts before commits to enforce documentation update.
+
+- **Implementation**:
+   Set up a pre-commit hook to run a script that checks for changes in code and prompts for corresponding documentation update.
+
+### 2. **Continuous Integration (CI) Checks**
+
+- **Tool** [GitHub Actions](https://docs.github.com/en/actions) or [GitLab CI/CD](https://docs.gitlab.com/ee/ci)
+
+- **Purpose** Automate checks to ensure documentation is updated with code change.
+
+- **Implementation**:
+   Configure a CI pipeline tha:
+    - Runs on pull requests.
+    - Checks for modifications in code files.
+    - Verifies corresponding documentation files are updated.
+    - Fails the build if discrepancies are found.
+
+### 3. **Documentation Generation Tools**
+
+- **Tool** [TypeDoc](https://typedoc.org)
+
+- **Purpose** Generate HTML or markdown documentation from TypeScript cod.
+
+- **Implementation**:
+   Integrate TypeDoc into the build process to automatically generate up-to-date documentatio.
+   Host the generated docs using platforms like [Read the Docs](https://readthedocs.org/) or GitHub Page.
+
+---
+
+## 🧠 Best Practices
+
+- **Consistency*: Ensure all team members follow the established documentation standars.
+
+- **Reviews*: Include documentation checks in code review processs.
+
+- **Training*: Provide onboarding sessions or guides for new contributors on documentation practics.
+
+- **Feedback Loop*: Encourage feedback on documentation clarity and usefulness, and iterate accordingy.
+
+By adhering to these guidelines and integrating automated processes, your documentation will remain a reliable and up-to-date resource, enhancing the overall quality
