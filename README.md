@@ -2,7 +2,7 @@
 
 A social habit tracker designed for micro-habits. Strengthen your routines with visual streaks and stay motivated through community support.
 
-🎥 Watch Demo
+🎥 [Watch Demo](https://main2-meenakshiars-projects.vercel.app/)
 
 ## 📌 About
 
@@ -44,7 +44,7 @@ Support others, clone inspiring loops, and build momentum together.
 
 ## 📸 Preview
 
-🎥 Click here to watch the demo video
+🎥 [Click here to watch the demo video](https://drive.google.com/file/d/1nERUKsbcolysYupVM1q7rc2KYmN306TS/view?usp=sharing)
 
 ## 🛠️ Installation & Setup
 
