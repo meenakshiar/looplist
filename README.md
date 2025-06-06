@@ -1,7 +1,6 @@
 # 🔁 LoopList
 
-A social streak tracker for micro-habits.
-Build better habits with visual streaks and community accountability.
+A social habit tracker designed for micro-habits. Strengthen your routines with visual streaks and stay motivated through community support.
 
 🎥 Watch Demo
 
@@ -31,13 +30,17 @@ Support others, clone inspiring loops, and build momentum together.
 
 ## 🚀 Tech Stack
 
-Tech Description
-Next.js Full-stack React framework for fast builds
-TypeScript Safer code with strong typing
-MongoDB NoSQL database for storing loops & streaks
-Mongoose MongoDB object modeling for Node.js
-Zustand Lightweight state management
-Hero UI Clean, modern UI components
+* Next.js- Full-stack React framework for fast builds
+
+* TypeScript- Safer code with strong typing
+
+* MongoDB- NoSQL database for storing loops & streaks
+
+* Mongoose- MongoDB object modeling for Node.js
+
+* Zustand- Lightweight state management
+
+* Hero UI- Clean, modern UI components
 
 ## 📸 Preview
 
@@ -55,10 +58,9 @@ Hero UI Clean, modern UI components
 - npm install or yarn install
 
 3. Set up Environment Variables
-   - Create a .env.local file and add:
-
-- MONGODB_URI=your_mongodb_connection_string
-- NEXT_PUBLIC_BASE_URL=http://localhost:3000
+- Create a .env.local file and add:
+  - MONGODB_URI=your_mongodb_connection_string
+  - NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
 4. Run the App
 
