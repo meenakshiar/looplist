@@ -2,7 +2,7 @@
 
 A social habit tracker designed for micro-habits. Strengthen your routines with visual streaks and stay motivated through community support.
 
-🎥 Watch Demo
+🎥 Watch Demo[https://github.com/meenakshiar/looplist.git]
 
 ## 📌 About
 
@@ -50,7 +50,7 @@ Support others, clone inspiring loops, and build momentum together.
 
 1. Clone the Repository
 
-- git clone https://github.com/your-username/looplist.git
+- https://github.com/meenakshiar/looplist.git
   cd looplist
 
 2. Install Dependencies
